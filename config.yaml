@@ -1,0 +1,25 @@
+simulation:
+  num_agents: 30
+  num_families: 6
+  seed: 42
+  max_steps: 500
+  rescue_timeout: 30
+
+  agent_attributes:
+    layout: "room_layouts/supermarket3.txt"
+    health: 100
+    risk: [0.1, 0.9]
+    range: 5
+    volume: 5
+    communicates: 20
+
+  strategies:
+    nearest_exit: 10
+    safest_exit: 10
+    least_crowded_exit: 10
+
+  fire:
+    fire_probability: 0.6
+    smoke_probability: 0.3
+    smoke_damage: 2
+    fire_damage: 50

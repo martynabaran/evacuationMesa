@@ -87,7 +87,10 @@ def _run_with_visualization(model: EvacuationModel) -> None:
                 mask = grid == cell_type
                 img[mask] = color
 
-            # Draw agents on top
+            ax_grid.clear()
+            ax_grid.imshow(img, origin="upper", interpolation="nearest")
+
+            # Draw agents on top with simple health bars
             for agent in model.schedule.agents:
                 if agent.state in ("escaped", "dead"):
                     continue
@@ -97,26 +100,47 @@ def _run_with_visualization(model: EvacuationModel) -> None:
                     "safest_exit":        (0.5, 0.0, 0.5),
                     "least_crowded_exit": (0.1, 0.5, 0.8),
                 }
-                img[r, c] = strategy_colors.get(agent.strategy, (0.2, 0.2, 0.2))
+                color = strategy_colors.get(agent.strategy, (0.2, 0.2, 0.2))
 
-            ax_grid.clear()
-            ax_grid.imshow(img, origin="upper", interpolation="nearest")
+                # Draw agent
+                ax_grid.plot(c, r, 'o', color=color, markersize=8,
+                           markeredgecolor='white', markeredgewidth=0.5)
+
+                # Simple health bar above agent
+                health_pct = agent.health / 100.0
+                bar_width = 0.6
+                bar_x = c - bar_width / 2
+                bar_y = r - 0.5
+
+                # Draw background (red) and health (green)
+                from matplotlib.patches import Rectangle
+                bg_rect = Rectangle((bar_x, bar_y), bar_width, 0.1,
+                                   facecolor='red', edgecolor='black', linewidth=0.3)
+                ax_grid.add_patch(bg_rect)
+
+                health_bar_color = 'green' if health_pct > 0.5 else 'yellow' if health_pct > 0.2 else 'red'
+                health_rect = Rectangle((bar_x, bar_y), bar_width * health_pct, 0.1,
+                                       facecolor=health_bar_color, edgecolor='none')
+                ax_grid.add_patch(health_rect)
             ax_grid.set_title(
                 f"Step {model.schedule.steps} | "
                 f"Escaped: {len(model.escaped_agents)} | "
                 f"Dead: {len(model.dead_agents)}"
             )
 
-            # Stats plot
+            # Stats plot with panic and rescuing counts
             mdf = model.datacollector.get_model_vars_dataframe()
             ax_stats.clear()
-            ax_stats.plot(mdf["Escaped"],  label="Escaped",  color="green")
-            ax_stats.plot(mdf["Dead"],     label="Dead",     color="red")
-            ax_stats.plot(mdf["Alive"],    label="Alive",    color="blue")
-            ax_stats.plot(mdf["FireCells"],  label="Fire cells",  color="orange", linestyle="--")
-            ax_stats.plot(mdf["SmokeCells"], label="Smoke cells", color="grey",   linestyle="--")
-            ax_stats.legend(fontsize=8)
+            ax_stats.plot(mdf["Escaped"],  label="Escaped",  color="green", linewidth=2)
+            ax_stats.plot(mdf["Dead"],     label="Dead",     color="red", linewidth=2)
+            ax_stats.plot(mdf["Alive"],    label="Alive",    color="blue", linewidth=2)
+            ax_stats.plot(mdf["Panicking"], label="Panicking", color="orange", linestyle=":", linewidth=1.5)
+            ax_stats.plot(mdf["Rescuing"], label="Rescuing", color="purple", linestyle=":", linewidth=1.5)
+            ax_stats.plot(mdf["FireCells"],  label="Fire cells",  color="orangered", linestyle="--", linewidth=1)
+            ax_stats.plot(mdf["SmokeCells"], label="Smoke cells", color="grey",   linestyle="--", linewidth=1)
+            ax_stats.legend(fontsize=7, loc='best')
             ax_stats.set_xlabel("Step")
+            ax_stats.set_ylabel("Count")
 
             plt.tight_layout()
             plt.pause(0.05)
