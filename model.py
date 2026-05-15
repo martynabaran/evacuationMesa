@@ -219,9 +219,11 @@ class EvacuationModel(mesa.Model):
 
     def register_escaped(self, agent: EvacuationAgent) -> None:
         self.escaped_agents.append(agent)
+        self.cell_occupant.pop(agent.pos, None)
 
     def register_dead(self, agent: EvacuationAgent) -> None:
         self.dead_agents.append(agent)
+        self.cell_occupant.pop(agent.pos, None)
 
     # ------------------------------------------------------------------ #
     #  Results export                                                     #
