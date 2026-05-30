@@ -9,6 +9,7 @@ An agent-based simulation of building evacuation under fire conditions, built wi
 - [Overview](#overview)
 - [Project Structure](#project-structure)
 - [Setup](#setup)
+- [Reproducing Report Results](#reproducing-report-results)
 - [Configuration](#configuration)
 - [Running Experiments](#running-experiments)
 - [Output Files](#output-files)
@@ -37,15 +38,18 @@ The simulation models a group of human agents evacuating a building during a fir
 
 ```
 evacuation_mesa/
-├── run.py            # Entry point — CLI for all experiment modes
-├── model.py          # EvacuationModel: top-level Mesa Model
-├── agents.py         # EvacuationAgent: agent state machine and behaviours
-├── environment.py    # Grid, fire/smoke CA, exit distance maps
-├── pathfinding.py    # A* and random walk implementations
-├── metrics.py        # Mesa DataCollector definitions
-├── config.py         # Configuration dataclasses and YAML loader
-├── requirements.txt  # Python dependencies
-└── room_layouts/     # Text files defining building layouts (expected by config)
+├── run.py               # Entry point — CLI for all experiment modes
+├── analyse_results.py   # Reproduces all report results, stats, and figures
+├── model.py             # EvacuationModel: top-level Mesa Model
+├── agents.py            # EvacuationAgent: agent state machine and behaviours
+├── environment.py       # Grid, fire/smoke CA, exit distance maps
+├── pathfinding.py       # A* and random walk implementations
+├── metrics.py           # Mesa DataCollector definitions
+├── config.py            # Configuration dataclasses and YAML loader
+├── config.yaml          # Default simulation parameters
+├── requirements.txt     # Python dependencies
+├── room_layouts/        # Text files defining building layouts
+└── results/             # Generated output (CSV data and figures)
 ```
 
 ---
@@ -65,6 +69,46 @@ source venv/bin/activate        # macOS / Linux
 ```bash
 pip install -r requirements.txt
 ```
+
+---
+
+## Reproducing Report Results
+
+All results, statistics, and figures in the final report were produced by a single script:
+
+```bash
+python analyse_results.py
+```
+
+This script performs four steps automatically:
+
+| Step | What happens | Output |
+|------|-------------|--------|
+| 1 | Single reference run (seed=42) | `results/model_timeseries.csv`, `results/agent_data.csv` |
+| 2 | Batch run — 100 replications (seeds 0–99) | `results/batch_results.csv` |
+| 3 | All summary statistics printed to stdout | — |
+| 4 | Publication figures generated | `results/analysis_plots.png`, `results/timeseries_plot.png` |
+
+**Options:**
+
+```bash
+# Full run — exactly reproduces the report (takes ~15 seconds)
+python analyse_results.py
+
+# Quick smoke-test with fewer replications
+python analyse_results.py --n-reps 20
+
+# Skip the batch run and regenerate figures from an existing batch_results.csv
+python analyse_results.py --skip-batch
+```
+
+**Expected outputs:**
+
+- `results/analysis_plots.png` — six-panel figure: survival rate distribution, strategy comparison, age-group survival, escape time histogram, fire/smoke spread scatter, communication effect
+- `results/timeseries_plot.png` — two-panel time-series of the reference run: agent states over time, environmental hazards and mean health
+- Console output with all numerical summaries (survival rates, strategy breakdown, age groups, escape times, communication effect, family rescue statistics, fire spread)
+
+> The exact numbers will match the report when run with the default 100 replications and the provided `config.yaml`. Fewer replications will produce slightly different values due to stochastic variation.
 
 ---
 
